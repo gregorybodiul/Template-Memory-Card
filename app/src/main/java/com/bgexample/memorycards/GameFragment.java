@@ -374,7 +374,7 @@ public class GameFragment extends Fragment {
 
     private int getRandomSrc(Cards cards){
         Random random = new Random();
-        int nextInt = random.nextInt(Math.min(level + 1, cards.getSize()));
+        int nextInt = random.nextInt(Math.min(level + 2, cards.getSize()));
         return cards.getSrc(nextInt);
     }
 
