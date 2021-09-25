@@ -7,7 +7,7 @@ import android.view.View;
 public class MyAnimation extends ValueAnimator {
     private ObjectAnimator objectAnimator;
 
-    public MyAnimation(View view, String property, int ValStart, int ValEnd, int duration) {
+    public MyAnimation(View view, String property, float ValStart, float ValEnd, int duration) {
         ObjectAnimator animation = ObjectAnimator.ofFloat(view, property, ValStart, ValEnd);
         animation.setDuration(duration);
         animation.start();

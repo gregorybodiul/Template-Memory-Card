@@ -37,6 +37,9 @@ public class GameFragment extends Fragment {
     private static final float FLIP_END_ROTATION = 180f;
     private static final int CARD_IMAGE_PLACE = R.drawable.place;
     private static final int CARD_PADDING = 6;
+    public static final int OPEN_CARDS_TIME_BASE = 2000;
+    public static final int OPEN_CARDS_TIME_ADD_OF_LEVEL = 1000;
+    public static final int OPEN_CARDS_TIME_OFFSET = 200;
     private static MediaPlayer soundBg;
     private final Cards cards = new Cards();
     private View view;
@@ -86,83 +89,80 @@ public class GameFragment extends Fragment {
             if(volumeBg > 0)
                 volumeBg-=0.25f;
             changeSoundBgLevel();
-            new MyAnimation(bgLevelDown, "rotation", (int)FLIP_START_ROTATION, -360, 200);
+            new MyAnimation(bgLevelDown, "rotation", FLIP_START_ROTATION, -360, 200);
         });
         bgLevelUp.setOnClickListener(v -> {
             if(volumeBg < 1)
                 volumeBg+=0.25f;
             changeSoundBgLevel();
-            new MyAnimation(bgLevelUp, "rotation", (int)FLIP_START_ROTATION, 360, 200);
+            new MyAnimation(bgLevelUp, "rotation", FLIP_START_ROTATION, 360, 200);
         });
         updateUI();
         playSoundBg(this.getActivity());
         return view;
     }
 
-    private void createNextLevel(Cards cards) {
-        MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", (int)FLIP_START_ROTATION, (int)(FLIP_END_ROTATION / 2), FLIP_LEVEL_DURATION);
-        myAnimation.getObjectAnimator().addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-
+    class FlipNewCards implements Runnable{
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+            new Handler(Looper.getMainLooper()).post(() -> {
+                playSound(R.raw.snd_ok);
+                MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", (int)-(FLIP_END_ROTATION / 2), (int)FLIP_START_ROTATION, FLIP_LEVEL_DURATION);
+                myAnimation.getObjectAnimator().addListener(new animListenerNextLevelSecond());
+            });
+        }
+    }
+    class animListenerNextLevelFirst implements Animator.AnimatorListener{
+        @Override
+        public void onAnimationStart(Animator animator) {}
 
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                frameLayout.removeAllViews();
-                createCards(cards);
+        @Override
+        public void onAnimationEnd(Animator animator) {
+            frameLayout.removeAllViews();
+            createCards(cards);
+            new Thread(new FlipNewCards()).start();
+        }
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Thread.sleep(300);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        new Handler(Looper.getMainLooper()).post(new Runnable() {
-                            @Override
-                            public void run() {
-                                playSound(R.raw.snd_ok);
-                                MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", (int)-(FLIP_END_ROTATION / 2), (int)FLIP_START_ROTATION, FLIP_LEVEL_DURATION);
-                                myAnimation.getObjectAnimator().addListener(new Animator.AnimatorListener() {
-                                    @Override
-                                    public void onAnimationStart(Animator animation) {
+        @Override
+        public void onAnimationCancel(Animator animator) {}
 
-                                    }
+        @Override
+        public void onAnimationRepeat(Animator animator) {}
+    }
+    class animListenerNextLevelSecond implements Animator.AnimatorListener{
 
-                                    @Override
-                                    public void onAnimationEnd(Animator animation) {
-                                        level++;
-                                        updateUI();
-                                        if(level == MAX_LEVEL)
-                                            level = 0;
-                                    }
+        @Override
+        public void onAnimationStart(Animator animator) {
 
-                                    @Override
-                                    public void onAnimationCancel(Animator animation) {
-                                    }
+        }
 
-                                    @Override
-                                    public void onAnimationRepeat(Animator animation) {
-                                    }
-                                });
-                            }
-                        });
-                    }
-                }).start();
-            }
+        @Override
+        public void onAnimationEnd(Animator animator) {
+            level++;
+            updateUI();
+            if(level == MAX_LEVEL)
+                level = 0;
+        }
 
-            @Override
-            public void onAnimationCancel(Animator animation) {
+        @Override
+        public void onAnimationCancel(Animator animator) {
 
-            }
+        }
 
-            @Override
-            public void onAnimationRepeat(Animator animation) {
+        @Override
+        public void onAnimationRepeat(Animator animator) {
 
-            }
-        });
+        }
+    }
+
+    private void createNextLevel() {
+        MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", FLIP_START_ROTATION, FLIP_END_ROTATION / 2, FLIP_LEVEL_DURATION);
+        myAnimation.getObjectAnimator().addListener(new animListenerNextLevelFirst());
     }
 
     private void createCards(Cards cards) {
@@ -182,8 +182,10 @@ public class GameFragment extends Fragment {
         int imagesHeightAndWidth = Math.min(widthWindow / countColumns, (heightWindow - heightPointsLayout)/ countRows);
         marginLeftFirstCard = (widthWindow - (imagesHeightAndWidth * countColumns)) / 2;
         marginTopFirstCard = ((heightWindow - heightPointsLayout) - (imagesHeightAndWidth * countRows)) / 2;
+        int indexCard = 0;
         for (int row = 0; row < countRows; row++) {
             for (int column = 0; column < countColumns; column++) {
+                indexCard++;
                 ImageView imageView = new ImageView(this.getContext());
                 imageView.setImageResource(R.drawable.place);
                 imageView.setPadding(CARD_PADDING,CARD_PADDING,CARD_PADDING,CARD_PADDING);
@@ -193,10 +195,20 @@ public class GameFragment extends Fragment {
                 layoutParams.topMargin = (imagesHeightAndWidth * row) + marginTopFirstCard;
                 imageView.setLayoutParams(layoutParams);
                 frameLayout.addView(imageView);
+                card_flip(imageView, Integer.parseInt(imageView.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, false, false);
+                int finalIndexCard = indexCard;
+                new Thread(() -> {
+                    try {
+                        Thread.sleep((OPEN_CARDS_TIME_BASE + OPEN_CARDS_TIME_ADD_OF_LEVEL * level) + (OPEN_CARDS_TIME_OFFSET * finalIndexCard));
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    new Handler(Looper.getMainLooper()).post(() -> card_flip(imageView, CARD_IMAGE_PLACE, FLIP_END_ROTATION, FLIP_START_ROTATION, false, false));
+                }).start();
                 imageView.setOnClickListener(v -> {
                     float viewRotationY = imageView.getRotationY();
                     if(viewRotationY == FLIP_START_ROTATION){
-                        card_flip(imageView, Integer.parseInt(imageView.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, false);
+                        card_flip(imageView, Integer.parseInt(imageView.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, false, true);
                     }
                 });
             }
@@ -214,32 +226,27 @@ public class GameFragment extends Fragment {
     }
 
 
-    private void card_flip(ImageView image, int visibleImage, float startValue, float endValue, boolean nextLevel) {
+    private void card_flip(ImageView image, int visibleImage, float startValue, float endValue, boolean nextLevel, boolean checkWin) {
         playSound(R.raw.snd_move);
         float average = Math.max(startValue, endValue) / 2f;
-        ObjectAnimator animation_90 = ObjectAnimator.ofFloat(image, "rotationY", startValue, average);
-        animation_90.setDuration(GameFragment.FLIP_DURATION);
-        animation_90.start();
-        animation_90.addListener(new Animator.AnimatorListener() {
+        MyAnimation myAnimation = new MyAnimation(image, "rotationY", startValue, average, FLIP_DURATION);
+        myAnimation.getObjectAnimator().addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                System.out.println("start animation");
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
                 image.setImageDrawable(getActivity().getDrawable(visibleImage));
-                ObjectAnimator animation_180 = ObjectAnimator.ofFloat(image, "rotationY", average, endValue);
-                animation_180.setDuration(GameFragment.FLIP_DURATION);
-                animation_180.start();
-                animation_180.addListener(new Animator.AnimatorListener() {
+                MyAnimation myAnimation1 = new MyAnimation(image, "rotationY", average, endValue, FLIP_DURATION);
+                myAnimation1.getObjectAnimator().addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
                     }
 
                     @Override
                     public void onAnimationEnd(Animator animation) {
-                        if(endValue > startValue && !nextLevel){
+                        if(endValue > startValue && !nextLevel && checkWin){
                             if(arrayOpenCard.size() == 0){
                                 arrayOpenCard.add(image);
                             }else{
@@ -273,7 +280,7 @@ public class GameFragment extends Fragment {
                                                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                                                         @Override
                                                         public void run() {
-                                                            card_flip((ImageView) card, CARD_IMAGE_PLACE, FLIP_END_ROTATION, FLIP_START_ROTATION, false);
+                                                            card_flip((ImageView) card, CARD_IMAGE_PLACE, FLIP_END_ROTATION, FLIP_START_ROTATION, false, false);
                                                         }
                                                     });
                                                 }
@@ -341,7 +348,7 @@ public class GameFragment extends Fragment {
                 View card = frameLayout.getChildAt(i);
                 System.out.println("Go to next level");
                 if((card.getRotationY() == FLIP_START_ROTATION) && (card.getAlpha() == 1) && card.getTag() != null){
-                    card_flip((ImageView) card, Integer.parseInt(card.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, true);
+                    card_flip((ImageView) card, Integer.parseInt(card.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, true, false);
                     isCustomChangeLevel = false;
                 }
             }
@@ -361,7 +368,7 @@ public class GameFragment extends Fragment {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            new Handler(Looper.getMainLooper()).post(() -> createNextLevel(cards));
+            new Handler(Looper.getMainLooper()).post(() -> createNextLevel());
         }).start();
     }
 
