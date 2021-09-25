@@ -27,15 +27,16 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class GameFragment extends Fragment {
-    private static final int MAX_LEVEL = 15;
+    private static final int MAX_LEVEL = 20;
     private static final int START_COUNT_COLUMNS = 3;
     private static final int START_COUNT_ROWS = 2;
     private static final int POINTS_WIN = 100;
-    private static final int FLIP_DURATION = 100;
-    private static final int FLIP_LEVEL_DURATION = 300;
+    private static final int FLIP_DURATION = 200;
+    private static final int FLIP_LEVEL_DURATION = 800;
     private static final float FLIP_START_ROTATION = 0f;
     private static final float FLIP_END_ROTATION = 180f;
     private static final int CARD_IMAGE_PLACE = R.drawable.place;
+    private static final int CARD_PADDING = 6;
     private static MediaPlayer soundBg;
     private final Cards cards = new Cards();
     private View view;
@@ -85,17 +86,13 @@ public class GameFragment extends Fragment {
             if(volumeBg > 0)
                 volumeBg-=0.25f;
             changeSoundBgLevel();
-            ObjectAnimator animation = ObjectAnimator.ofFloat(bgLevelDown, "rotation", FLIP_START_ROTATION, -360);
-            animation.setDuration(200);
-            animation.start();
+            new MyAnimation(bgLevelDown, "rotation", (int)FLIP_START_ROTATION, -360, 200);
         });
         bgLevelUp.setOnClickListener(v -> {
             if(volumeBg < 1)
                 volumeBg+=0.25f;
             changeSoundBgLevel();
-            ObjectAnimator animation = ObjectAnimator.ofFloat(bgLevelUp, "rotation", FLIP_START_ROTATION, 360);
-            animation.setDuration(200);
-            animation.start();
+            new MyAnimation(bgLevelUp, "rotation", (int)FLIP_START_ROTATION, 360, 200);
         });
         updateUI();
         playSoundBg(this.getActivity());
@@ -103,10 +100,8 @@ public class GameFragment extends Fragment {
     }
 
     private void createNextLevel(Cards cards) {
-        ObjectAnimator animation_90 = ObjectAnimator.ofFloat(frameLayout, "rotationX", FLIP_START_ROTATION, FLIP_END_ROTATION / 2);
-        animation_90.setDuration(GameFragment.FLIP_LEVEL_DURATION);
-        animation_90.start();
-        animation_90.addListener(new Animator.AnimatorListener() {
+        MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", (int)FLIP_START_ROTATION, (int)(FLIP_END_ROTATION / 2), FLIP_LEVEL_DURATION);
+        myAnimation.getObjectAnimator().addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
 
@@ -129,10 +124,8 @@ public class GameFragment extends Fragment {
                             @Override
                             public void run() {
                                 playSound(R.raw.snd_ok);
-                                ObjectAnimator animation_180 = ObjectAnimator.ofFloat(frameLayout, "rotationX", -(FLIP_END_ROTATION / 2), FLIP_START_ROTATION);
-                                animation_180.setDuration(GameFragment.FLIP_LEVEL_DURATION);
-                                animation_180.start();
-                                animation_180.addListener(new Animator.AnimatorListener() {
+                                MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", (int)-(FLIP_END_ROTATION / 2), (int)FLIP_START_ROTATION, FLIP_LEVEL_DURATION);
+                                myAnimation.getObjectAnimator().addListener(new Animator.AnimatorListener() {
                                     @Override
                                     public void onAnimationStart(Animator animation) {
 
@@ -193,6 +186,7 @@ public class GameFragment extends Fragment {
             for (int column = 0; column < countColumns; column++) {
                 ImageView imageView = new ImageView(this.getContext());
                 imageView.setImageResource(R.drawable.place);
+                imageView.setPadding(CARD_PADDING,CARD_PADDING,CARD_PADDING,CARD_PADDING);
                 imageView.setTag(getRandomSrc(cards));
                 FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imagesHeightAndWidth, imagesHeightAndWidth);
                 layoutParams.leftMargin = (imagesHeightAndWidth * column) + marginLeftFirstCard;
