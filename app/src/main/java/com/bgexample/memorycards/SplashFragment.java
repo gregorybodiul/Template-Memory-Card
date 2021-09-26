@@ -28,33 +28,11 @@ public class SplashFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        new Thread(new Runnable() {
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        Navigation.findNavController(view).navigate(R.id.action_splashFragment_to_gameFragment);
-                    }
-                },5000);
+                Navigation.findNavController(view).navigate(R.id.action_splashFragment_to_gameFragment);
             }
-        }).start();
-
-        //new Thread(new Loading(R.id.action_splashFragment_to_gameFragment,5000)).start();
-    }
-    class Loading implements Runnable {
-        private int actionId;
-        private int sleep;
-
-        public Loading(int actionId, int sleep){
-            this.actionId = actionId;
-            this.sleep = sleep;
-        }
-
-        @Override
-        public void run() {
-            try { Thread.sleep(sleep); } catch (InterruptedException e) { e.printStackTrace();}
-            new Handler(Looper.getMainLooper()).post(() -> Navigation.findNavController(view).navigate(actionId));
-        }
+        },5000);
     }
 }
