@@ -60,7 +60,6 @@ public class GameFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         OnBackPressedCallback callback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -72,6 +71,7 @@ public class GameFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         view = inflater.inflate(R.layout.fragment_game, container, false);
         frameLayout = view.findViewById(R.id.game_layout);
         pointsLayout = view.findViewById(R.id.points_layout);
@@ -102,21 +102,11 @@ public class GameFragment extends Fragment {
         return view;
     }
 
-    class FlipNewCards implements Runnable{
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            new Handler(Looper.getMainLooper()).post(() -> {
-                playSound(R.raw.snd_ok);
-                MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", (int)-(FLIP_END_ROTATION / 2), (int)FLIP_START_ROTATION, FLIP_LEVEL_DURATION);
-                myAnimation.getObjectAnimator().addListener(new animListenerNextLevelSecond());
-            });
-        }
+    @Override
+    public void onStart() {
+        super.onStart();
     }
+
     class animListenerNextLevelFirst implements Animator.AnimatorListener{
         @Override
         public void onAnimationStart(Animator animator) {}
@@ -125,7 +115,14 @@ public class GameFragment extends Fragment {
         public void onAnimationEnd(Animator animator) {
             frameLayout.removeAllViews();
             createCards(cards);
-            new Thread(new FlipNewCards()).start();
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    playSound(R.raw.snd_ok);
+                    MyAnimation myAnimation = new MyAnimation(frameLayout, "rotationX", (int)-(FLIP_END_ROTATION / 2), (int)FLIP_START_ROTATION, FLIP_LEVEL_DURATION);
+                    myAnimation.getObjectAnimator().addListener(new animListenerNextLevelSecond());
+                }
+            }, 300);
         }
 
         @Override
@@ -195,16 +192,17 @@ public class GameFragment extends Fragment {
                 layoutParams.topMargin = (imagesHeightAndWidth * row) + marginTopFirstCard;
                 imageView.setLayoutParams(layoutParams);
                 frameLayout.addView(imageView);
-                card_flip(imageView, Integer.parseInt(imageView.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, false, false);
+                //card_flip(imageView, Integer.parseInt(imageView.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, false, false);
+
                 int finalIndexCard = indexCard;
-                new Thread(() -> {
-                    try {
-                        Thread.sleep((OPEN_CARDS_TIME_BASE + OPEN_CARDS_TIME_ADD_OF_LEVEL * level) + (OPEN_CARDS_TIME_OFFSET * finalIndexCard));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    new Handler(Looper.getMainLooper()).post(() -> card_flip(imageView, CARD_IMAGE_PLACE, FLIP_END_ROTATION, FLIP_START_ROTATION, false, false));
-                }).start();
+//                new Thread(() -> {
+//                    try {
+//                        Thread.sleep((OPEN_CARDS_TIME_BASE + OPEN_CARDS_TIME_ADD_OF_LEVEL * level) + (OPEN_CARDS_TIME_OFFSET * finalIndexCard));
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                    new Handler(Looper.getMainLooper()).post(() -> card_flip(imageView, CARD_IMAGE_PLACE, FLIP_END_ROTATION, FLIP_START_ROTATION, false, false));
+//                }).start();
                 imageView.setOnClickListener(v -> {
                     float viewRotationY = imageView.getRotationY();
                     if(viewRotationY == FLIP_START_ROTATION){

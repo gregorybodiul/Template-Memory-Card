@@ -28,7 +28,19 @@ public class SplashFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        new Thread(new Loading(R.id.action_splashFragment_to_gameFragment,5000)).start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Navigation.findNavController(view).navigate(R.id.action_splashFragment_to_gameFragment);
+                    }
+                },5000);
+            }
+        }).start();
+
+        //new Thread(new Loading(R.id.action_splashFragment_to_gameFragment,5000)).start();
     }
     class Loading implements Runnable {
         private int actionId;
