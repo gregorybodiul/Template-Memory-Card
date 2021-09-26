@@ -26,6 +26,10 @@ import androidx.fragment.app.Fragment;
 import java.util.ArrayList;
 import java.util.Random;
 
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+
 public class GameFragment extends Fragment {
     private static final int MAX_LEVEL = 20;
     private static final int START_COUNT_COLUMNS = 3;
@@ -179,38 +183,27 @@ public class GameFragment extends Fragment {
         int imagesHeightAndWidth = Math.min(widthWindow / countColumns, (heightWindow - heightPointsLayout)/ countRows);
         marginLeftFirstCard = (widthWindow - (imagesHeightAndWidth * countColumns)) / 2;
         marginTopFirstCard = ((heightWindow - heightPointsLayout) - (imagesHeightAndWidth * countRows)) / 2;
-        int indexCard = 0;
         for (int row = 0; row < countRows; row++) {
             for (int column = 0; column < countColumns; column++) {
-                indexCard++;
                 ImageView imageView = new ImageView(this.getContext());
-                imageView.setImageResource(R.drawable.place);
-                imageView.setPadding(CARD_PADDING,CARD_PADDING,CARD_PADDING,CARD_PADDING);
+                imageView.setPadding(CARD_PADDING, CARD_PADDING, CARD_PADDING, CARD_PADDING);
                 imageView.setTag(getRandomSrc(cards));
+                imageView.setImageResource(Integer.parseInt(imageView.getTag().toString()));
+                new MyAnimation(imageView, "rotationY", 0, 180, 100);
                 FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imagesHeightAndWidth, imagesHeightAndWidth);
                 layoutParams.leftMargin = (imagesHeightAndWidth * column) + marginLeftFirstCard;
                 layoutParams.topMargin = (imagesHeightAndWidth * row) + marginTopFirstCard;
                 imageView.setLayoutParams(layoutParams);
                 frameLayout.addView(imageView);
-                //card_flip(imageView, Integer.parseInt(imageView.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, false, false);
-
-                int finalIndexCard = indexCard;
-//                new Thread(() -> {
-//                    try {
-//                        Thread.sleep((OPEN_CARDS_TIME_BASE + OPEN_CARDS_TIME_ADD_OF_LEVEL * level) + (OPEN_CARDS_TIME_OFFSET * finalIndexCard));
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    new Handler(Looper.getMainLooper()).post(() -> card_flip(imageView, CARD_IMAGE_PLACE, FLIP_END_ROTATION, FLIP_START_ROTATION, false, false));
-//                }).start();
                 imageView.setOnClickListener(v -> {
                     float viewRotationY = imageView.getRotationY();
-                    if(viewRotationY == FLIP_START_ROTATION){
+                    if (viewRotationY == FLIP_START_ROTATION) {
                         card_flip(imageView, Integer.parseInt(imageView.getTag().toString()), FLIP_START_ROTATION, FLIP_END_ROTATION, false, true);
                     }
                 });
             }
         }
+
         dialogPoints = new TextView(getContext());
         dialogPoints.setGravity(Gravity.CENTER);
         dialogPoints.setTypeface(ResourcesCompat.getFont(getContext(), R.font.berlin_sans));
@@ -219,8 +212,25 @@ public class GameFragment extends Fragment {
         dialogPoints.setTextColor(Color.GREEN);
         dialogPoints.setAlpha(0f);
         frameLayout.addView(dialogPoints);
-
         checkFinishLevel("");
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                hideTheCards();
+            }
+        }, (OPEN_CARDS_TIME_BASE + OPEN_CARDS_TIME_ADD_OF_LEVEL * level));
+    }
+
+    private void hideTheCards(){
+        for (int i = 0; i < frameLayout.getChildCount(); i++) {
+            try{
+                ImageView card = (ImageView) frameLayout.getChildAt(i);
+                card.setImageResource(R.drawable.place);
+                new MyAnimation(card, "rotationY", 180, 0,1);
+            }catch (Exception e){
+
+            }
+        }
     }
 
 
