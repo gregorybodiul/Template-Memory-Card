@@ -43,7 +43,6 @@ public class GameFragment extends Fragment {
     private static final int CARD_PADDING = 6;
     public static final int OPEN_CARDS_TIME_BASE = 2000;
     public static final int OPEN_CARDS_TIME_ADD_OF_LEVEL = 1000;
-    public static final int OPEN_CARDS_TIME_OFFSET = 200;
     private static MediaPlayer soundBg;
     private final Cards cards = new Cards();
     private View view;
